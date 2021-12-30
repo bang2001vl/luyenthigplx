@@ -20,17 +20,20 @@ export class RepairedData {
  * @param {Pool} pool 
  * @param {string} tableName Fields want to insert
  * @param {*} data Data want to insert
- * @param {string[]} fields 
+ * @param {string[]} fields Null will takes all property
  * @returns SQL statement and array of values to insert
  */
 export async function insertToDB(pool, tableName, data, fields) {
+    if(fields === undefined || fields === null){
+         fields = Object.keys(data);
+    }
     let args = [];
     let values = [];
 
     for (let i = 0; i < fields.length; i++) {
         let field = fields[i];
-        values.push(data[field]);
         args.push("?");
+        values.push(data[field]);
     }
 
     let fields_string = fields.join(',');
@@ -38,7 +41,7 @@ export async function insertToDB(pool, tableName, data, fields) {
     let sql = `INSERT INTO ${tableName}(${fields_string}) VALUES(${args_string});`;
 
     //console.log(`SQL Statement : ${sql}`);
-    return pool.execute(sql, values);
+    return pool.query(sql, values);
 }
 
 /**
@@ -56,7 +59,7 @@ export async function deleteFromTable(pool, table, id) {
 
 /**
  * 
- * @param {*} pool 
+ * @param {Pool} pool 
  * @param {*} table 
  * @param {*} id 
  * @param {*} data 

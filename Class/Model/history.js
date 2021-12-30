@@ -1,13 +1,14 @@
-import {TimeStampModel} from "./timetamp.js";
+import { TimeStampModel } from "./timetamp.js";
 
 export class HistoryModel extends TimeStampModel {
     /**
      * 
      * @param {{
-     * id : number, 
      * accountID: number, 
      * topicID: number, 
      * isPassed: boolean, 
+     * isFinished: boolean, 
+     * timeLeft: number, 
      * questionIds: string[],
      * selectedAns: string[],
      * correctAns: string[],
@@ -19,9 +20,10 @@ export class HistoryModel extends TimeStampModel {
     constructor(args) {
         super(args);
 
-        this.topicID = args.topicID;
         this.accountID = args.accountID;
+        this.topicID = args.topicID;
         this.isPassed = args.isPassed;
+        this.isFinished = args.isFinished;
 
         this.selectedAns = args.selectedAns;
         this.correctAns = args.correctAns;
@@ -40,6 +42,19 @@ export class HistoryModel extends TimeStampModel {
         }
     }
 
+    static fromJSON(json) {
+        super.fromJSON(json);
+
+        this.accountID = json["accountID"];
+        this.topicID = json["topicID"];
+        this.isPassed = json["isPassed"];
+        this.isFinished = json["isFinished"];
+        this.timeLeft = json["timeLeft"];
+        this.rawQuestionIDs = json["rawQuestionIDs"];
+        this.rawCorrect = json["rawCorrect"];
+        this.rawSelected = json["rawSelected"];
+    }
+
     get rawCorrect() {
         return this.correctAns.join('.');
     }
@@ -56,7 +71,7 @@ export class HistoryModel extends TimeStampModel {
         this.selectedAns = value.split('.');
     }
 
-    get rawQuestionIDs(){
+    get rawQuestionIDs() {
         return this.questionIds.join('.');
     }
 

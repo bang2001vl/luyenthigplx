@@ -1,83 +1,62 @@
-import { Server, Socket } from 'socket.io';
-import {detroySessionData, getSessionData, saveSessionData} from './session';
-import express from 'express';
-import { createServer } from 'http';
+import { Server, Socket } from "socket.io";
+import { createServer } from "http";
+import console from "console";
+import { onSocketUnauthorized} from "./utilities";
+import { SocketAuthEventHandler } from "./auth";
+import { SocketDataEventHandler } from "./dataHandler";
 
 const server = createServer();
 const io = new Server(server);
 
-/** @param {Socket} socket */
-function onAuthorize(socket, data){
-    // DENBUG
-    onAuthSuccess(socket, data);
-    return;
-
-    // let token = data.auth_token;
-    // let username = data.username;
-
-    // if(token == undefined || username == undefined)
-    // {
-    //     socket.emit('resultAuthorize','Unauthorized');
-    //     return;
-    // }
-
-    // //console.log('SOCKET.IO: Have access with token = ' + token + ' , username = ' + username);
-
-    // jwt.verify(token, privateKey, (err, decoded)=>{
-    //     if(err){
-    //         console.log(err);
-    //         socket.emit('resultAuthorize',{code:403, errorMessage:'Invalid token'});
-    //         return;
-    //     }
-    //     // console.log('decoded = ' , JSON.stringify(decoded));
-        
-    //     console.log('SOCKET.IO: Authorized socket id = ' + socket.id);        
-    //     socket.emit('resultAuthorized', {code: CODE_AUTH_SUCCESS});
-    // });
-}
-
-/** @param {Socket} socket */
-function onAuthSuccess(socket, data){
-    // getSessionData(socket).isAuthorized = true;
-    // getSessionData(socket).userID = data.userID;
-    // saveSessionData(socket);
-    
-    socket.join("authoried", ()=>{
-        console.log("SOCKET.IO: Join client " + socket.id + " to room /all");
-    }); 
-    socket.emit("authorized");
-}
+const auth = new SocketAuthEventHandler();
+const dataEventHandler = new SocketDataEventHandler();
 
 io.on("connection", (socket) => {
     console.log("Attemp from " + socket.id);
-    socket.on("connect", ()=>{
-        console.log('On connect from ' + socket.id);
-    })
-
-    socket.on('authorize', (data)=>{
-        //console.log('on auth. data = ' + JSON.stringify(data));
-        onAuthorize(socket, data)
+    socket.on("connect", () => {
+        console.log("On connect from " + socket.id);
     });
 
-    setTimeout(function(){
-        // If after 3s socket not auth yet, we will disconnect it
-        if (!getSessionData(socket).isAuthorized) {
-            console.log('Disconnect with reason timeout');
-            socket.disconnect('unauthorized');
-        }
-    }, 3000);
+    socket.on("authorize", (data) => {
+        auth.onAuthorize(socket, data);
+    });
 
-    socket.on('disconnect', (reason)=>{
-        console.log('SOCKET.IO: Disconnect client id = '+ socket.id + ' , with reason = ' + reason);
-        detroySessionData(socket);
+    socket.on("notify_change_data", async (data) => {
+        dataEventHandler.onNotifyNewData(socket, data);
+    });
+
+    socket.on("get_unsync_data", (data) => {
+        dataEventHandler.onRequestUnsyncData(socket, data);
+    });
+
+    socket.on("delete_data", (data)=>{
+        dataEventHandler.onDeleteData(socket, data, io);
+    })
+
+    setTimeout(function () {
+        // If after 5s socket not auth yet, we will disconnect it
+        if (!auth.checkSocketAuthorized(socket)) {
+            console.log("Disconnect with reason timeout");
+            onSocketUnauthorized(socket);
+        }
+    }, 5000);
+
+    socket.on("disconnect", (reason) => {
+        console.log(
+            "SOCKET.IO: Disconnect client id = " +
+            socket.id +
+            " , with reason = " +
+            reason
+        );
     });
 });
 
 /**
  * Start SocketIO server
- * @param {number} port 
+ * @param {number} port
  */
 export function initSocketIO(port) {
-    console.log("SocketIO: Listening on port " + port);
-    server.listen(port);
+    server.listen(port, () => {
+        console.log("SocketIO: Listening on port " + port);
+    });
 }

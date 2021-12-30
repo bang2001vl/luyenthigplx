@@ -1,0 +1,4 @@
+errorCode   messsage
+100 Invalid token
+401 Wrong protocol data
+402 Wrong email or password

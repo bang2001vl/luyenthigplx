@@ -1,6 +1,10 @@
 import mysql from 'mysql2/promise';
 import { HistoryModel } from '../Class/Model';
+import { AuthRepos } from './auth';
 import { HistoryReposity } from './history';
+import { PracticeReposity } from './practice';
+import { SessionReposity } from './sessionRepo';
+import { UserRepository} from './user';
 
 export class Reader{
     constructor(error, data){
@@ -38,3 +42,21 @@ export function testDB() {
 }
 
 export const historyRepos = new HistoryReposity(pool);
+export const practiceRepos = new PracticeReposity(pool);
+export const userRepos = new UserRepository(pool);
+export const sessionRepos = new SessionReposity(pool);
+export const authController = new AuthRepos();
+
+export async function startTransaction(){
+    var c = await pool.getConnection();
+    await c.query("START TRANSACTION");
+    console.log("Begin transaction");
+    return c;
+}
+
+/** @param {mysql.PoolConnection} connection */
+export async function commitTransaction(connection){
+    await connection.query("COMMIT");
+    connection.release();
+    console.log("Commit transaction and close connection");
+}
