@@ -31,6 +31,7 @@ export class SessionReposity {
         for (var i = 0; i < rows.length; i++) {
             rs.push(SessionModel.fromJSON(rows[i]));
         }
+        console.log("here");
         return rs;
     }
 
@@ -54,13 +55,13 @@ export class SessionReposity {
      * @param {UserModel} user 
      * @returns Token for session
      */
-    async insertSession(user, device) {
+    async insertSession(accountId) {
         console.log(`Session: Insert session`);
         var token = await this.createToken();
 
         var session = new SessionModel({
             token: token,
-            accountId: user.id,
+            accountId: accountId,
         });
 
         var fields = [
@@ -110,6 +111,13 @@ export class SessionReposity {
         let sql = `DELETE FROM ${this.tableName} WHERE token = ?`;
         var [result, f] = await this.pool.execute(sql, [token]);
         //console.log(JSON.stringify(result.ad));
+        return result.affectedRows;
+    }
+
+    async updateDeviceInfo(token, device_info){
+        console.log("Session: Update session with device info " + device_info);
+        let sql = `UPDATE ${this.tableName} SET device_info=? WHERE token=?`;
+        let [result, f] = await this.pool.execute(sql, [device_info, token]);
         return result.affectedRows;
     }
 }

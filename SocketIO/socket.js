@@ -2,8 +2,9 @@ import { Server, Socket } from "socket.io";
 import { createServer } from "http";
 import console from "console";
 import { onSocketUnauthorized} from "./utilities";
-import { SocketAuthEventHandler } from "./auth";
+import { SocketAuthEventHandler } from "./authHandler";
 import { SocketDataEventHandler } from "./dataHandler";
+import { SocketEvent } from "./event";
 
 const server = createServer();
 const io = new Server(server);
@@ -17,29 +18,33 @@ io.on("connection", (socket) => {
         console.log("On connect from " + socket.id);
     });
 
-    socket.on("authorize", (data) => {
+    socket.on(SocketEvent.event_authorize, (data) => {
         auth.onAuthorize(socket, data);
     });
 
-    socket.on("notify_change_data", async (data) => {
+    socket.on(SocketEvent.event_authorized, ()=>{
+        console.log("SocketIO: Authorized socket + " + socket.id);
+    });
+
+    socket.on(SocketEvent.request_insert_data, async (data) => {
         dataEventHandler.onNotifyNewData(socket, data);
     });
 
-    socket.on("get_unsync_data", (data) => {
+    socket.on(SocketEvent.request_get_unsync, (data) => {
         dataEventHandler.onRequestUnsyncData(socket, data);
     });
 
-    socket.on("delete_data", (data)=>{
+    socket.on(SocketEvent.request_deleted_data, (data)=>{
         dataEventHandler.onDeleteData(socket, data, io);
-    })
+    });
 
     setTimeout(function () {
-        // If after 5s socket not auth yet, we will disconnect it
+        // If after 30s socket not auth yet, we will disconnect it
         if (!auth.checkSocketAuthorized(socket)) {
             console.log("Disconnect with reason timeout");
             onSocketUnauthorized(socket);
         }
-    }, 5000);
+    }, 30000);
 
     socket.on("disconnect", (reason) => {
         console.log(
@@ -48,6 +53,7 @@ io.on("connection", (socket) => {
             " , with reason = " +
             reason
         );
+        auth.destroySession(socket);
     });
 });
 

@@ -5,9 +5,10 @@ import { UserModel } from "../Class/Model";
 /**
  * @typedef {import("mysql2/promise").Pool} Pool} 
  * @typedef {import("../Class/Model").UserModel} UserModel}
+ * @typedef {import("../Class/Model").AuthModel} AuthModel}
  */
 
-export class UserRepository{
+export class AccountRepository{
     /**
      * 
      * @param {Pool} pool 
@@ -21,7 +22,7 @@ export class UserRepository{
      * 
      * @param {String} email 
      * @param {Buffer} password 
-     * @returns Return an empty list if not found
+     * @returns {Promise<AuthModel[]>} Return an empty list if not found
      */
     async findUserByAuth(email, password){
         //console.log(`Auth: Find email = ${email}, password = ${password}`);
@@ -32,7 +33,7 @@ export class UserRepository{
         });
         var rs = [];
         for(var i = 0; i< rows.length; i++){
-            rs.push(UserModel.fromJSON(rows[i]));
+            rs.push(rows[i]);
             console.log(JSON.stringify(rs[i]));
         }
         return rs;
@@ -41,14 +42,14 @@ export class UserRepository{
     /**
      * 
      * @param {number} id 
-     * @returns Return an empty list if not found
+     * @returns {Promise<AuthModel[]>} Return an empty list if not found
      */
     async findUserById(id){
         var sql = `SELECT * FROM ${this.tableName} WHERE id=?`;
         var [rows, f] = await this.pool.execute(sql, [id]);
         var rs = [];
         for(var i = 0; i< rows.length; i++){
-            rs.push(UserModel.fromJSON(rows[i]));
+            rs.push(rows[i]);
         }
         return rs;
     }

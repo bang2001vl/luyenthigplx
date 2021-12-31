@@ -3,6 +3,7 @@
  */
 
 import { authController, sessionRepos } from "../Database/mysqlController";
+import { SocketEvent } from "./event";
 import { onSocketUnauthorized, onSocketWrongProtocol } from "./utilities";
 
 export class SocketAuthEventHandler {
@@ -16,15 +17,17 @@ export class SocketAuthEventHandler {
         console.log("SocketIO: onAuthorize");
         console.log(JSON.stringify(data));
         // Check data
-        if (typeof (data.token) !== 'string') {
+        if (typeof (data.token) !== 'string' || data.device === undefined) {
             onSocketWrongProtocol(socket);
             return;
         }
 
         // Check session
-        var reader = await authController.checkToken(data.token);
+        let {token, device} = data;
+        let device_info = JSON.stringify(device);
+        var reader = await authController.checkToken(token);
         if (reader === null) {
-            socket.emit("authorize_failed", {
+            socket.emit(SocketEvent.event_failed_authorized, {
                 errorCode: 100,
                 message: "Wrong token",
             });
@@ -32,18 +35,15 @@ export class SocketAuthEventHandler {
         }
 
         console.log("SocketIO: Check session OK");
-        let { user, session } = reader;
+        let { userInfo, session } = reader;
         // Passed
-        socket["accountId"] = user.id;
+        socket["accountId"] = session.accountId;
         socket["token"] = session.token;
-        await socket.join(user.id, () => {
-            console.log("SOCKET.IO: Join client " + socket.id + " to room account");
-        });
+        await sessionRepos.updateDeviceInfo(session.token, device_info);
+        await socket.join(session.accountId);
 
-        socket.emit("authorized", {
-            userInfo: {
-                name: user.name
-            },
+        socket.emit(SocketEvent.event_authorized, {
+            userInfo: userInfo,
             token: session.token,
         });
     }
@@ -74,6 +74,10 @@ export class SocketAuthEventHandler {
      * @param {Socket} socket 
      */
     async destroySession(socket) {
+        if(socket["token"] == undefined){
+            onSocketUnauthorized(socket);
+            return;
+        }
         await sessionRepos.deleteSessionByToken(socket.token);
         socket["accountId"] = null;
         socket["token"] = null;

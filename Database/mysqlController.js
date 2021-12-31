@@ -4,7 +4,8 @@ import { AuthRepos } from './auth';
 import { HistoryReposity } from './history';
 import { PracticeReposity } from './practice';
 import { SessionReposity } from './sessionRepo';
-import { UserRepository} from './user';
+import { AccountRepository} from './user';
+import { UserInfoReposity } from './userInfo';
 
 export class Reader{
     constructor(error, data){
@@ -43,7 +44,8 @@ export function testDB() {
 
 export const historyRepos = new HistoryReposity(pool);
 export const practiceRepos = new PracticeReposity(pool);
-export const userRepos = new UserRepository(pool);
+export const authRepos = new AccountRepository(pool);
+export const userRepos = new UserInfoReposity(pool);
 export const sessionRepos = new SessionReposity(pool);
 export const authController = new AuthRepos();
 

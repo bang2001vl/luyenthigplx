@@ -27,11 +27,9 @@ route.post("/login", async (req, res) => {
         return;
     }
     
-    let {user, token} = data;
+    let {userInfo, token} = data;
     res.json({
-        userInfo:{
-            name: user.name,
-        },
+        userInfo: userInfo,
         token: token,
     }).end();
     return;

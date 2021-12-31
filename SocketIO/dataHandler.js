@@ -1,11 +1,13 @@
 /** 
  * @typedef {import("socket.io").Socket} Socket
- *  * @typedef {import("socket.io").Server} Server
+ * @typedef {import("socket.io").Server} Server
+ * @typedef {import("../Class/Model") * } 
  */
 
 import { getUTCTimestamp } from "../Class/Model/timetamp";
-import { historyRepos, practiceRepos } from "../Database/mysqlController";
-import { SocketAuthEventHandler } from "./auth";
+import { historyRepos, practiceRepos, userRepos } from "../Database/mysqlController";
+import { SocketAuthEventHandler } from "./authHandler";
+import { SocketEvent } from "./event";
 import { onSocketUnauthorized, onSocketWrongProtocol } from "./utilities";
 
 export class SocketDataEventHandler{
@@ -45,12 +47,12 @@ export class SocketDataEventHandler{
         console.log("SOCKET.IO: Insert practices");
         var b = await practiceRepos.insertOrUpdateList(accountId, practices);
 
-        socket.emit("responsed_notify_data_changed", {
+        socket.emit(SocketEvent.response_notify_changed, {
             "histories": a,
             "practices": b,
         });
 
-        socket.broadcast.to(accountId).emit("data_changed");
+        socket.broadcast.to(accountId).emit(SocketEvent.event_data_changed);
     }
 
     /**
@@ -83,10 +85,16 @@ export class SocketDataEventHandler{
         console.log("SOCKET.IO: Find practices");
         var unsync_practices = await practiceRepos.findNotSync(accountId, lastSyncTime);
 
-        socket.emit("response_unsync_data", {
+        var userInfo = (await userRepos.findByAccountId(accountId))[0];
+        if(userInfo.updateTime < lastSyncTime){
+            userInfo = null;
+        }
+
+        socket.emit(SocketEvent.response_get_unsync, {
             "sync_time": sync_time,
             "histories": unsync_history,
             "practices": unsync_practices,
+            "userInfo": userInfo,
         });
     }
 
@@ -103,14 +111,20 @@ export class SocketDataEventHandler{
             return;
         }
 
+        let deleteTime = getUTCTimestamp();
+
         let count = 0;
         count += await historyRepos.deleteByAccount(accountId);
         count += await practiceRepos.deleteByAccount(accountId);
 
+        await userRepos.updateLatestDelete(accountId, deleteTime);
+
         console.log(`SocketIO: Delete ${count} rows from accountId = ${accountId}`);
 
-        io.to(accountId).emit("deleted_sync_data", {
-            count: count,
-        });
+        // io.to(accountId).emit("deleted_sync_data", {
+        //     count: count,
+        //     "delete_time": deleteTime,
+        // });
+        io.to(accountId).emit(SocketEvent.event_data_changed);
     }
 }

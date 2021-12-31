@@ -2,25 +2,28 @@ export class UserModel{
     /**
      * 
      * @param {{
-     * id: number,
-     * email: String,
-     * password: ArrayBufferTypes,
-     * name: String
+     * accountId: number,
+     * name: String,
+     * image: String,
+     * latestDelete: number,
+     * updateTime: number,
      * }} args 
      */
     constructor(args){
-        this.id = args.id;
-        this.email = args.email;
-        this.password = args.password;
+        this.accountId = args.accountId;
         this.name = args.name;
+        this.image = args.image;
+        this.latestDelete = args.latestDelete;
+        this.updateTime = args.updateTime;
     }
 
     static fromJSON(args){
         return new UserModel({
-            id: args["id"],
-            email: args["email"],
-            password: args["password"],
+            accountId: args["accountId"],
             name: args["name"],
+            image: args["image"],
+            latestDelete: args["latestDelete"],
+            updateTime: args["updateTime"],
         });
     }
 }
