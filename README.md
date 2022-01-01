@@ -5,13 +5,13 @@ Dự án phía client: https://github.com/bang2001vl/SatHachLaiXe.git
 
 
 ## Npm
-
+```
 npm install
-
 npm start
-
+```
 ## Pm2
-
+```
 npm install
 
 pm2 start npm --name "luyenthigplx" -- run "start"
+```
