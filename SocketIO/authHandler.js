@@ -15,7 +15,7 @@ export class SocketAuthEventHandler {
      */
     async onAuthorize(socket, data) {
         console.log("SocketIO: onAuthorize");
-        console.log(JSON.stringify(data));
+        //console.log(JSON.stringify(data));
         // Check data
         if (typeof (data.token) !== 'string' || data.device === undefined) {
             onSocketWrongProtocol(socket);
@@ -36,6 +36,7 @@ export class SocketAuthEventHandler {
 
         console.log("SocketIO: Check session OK");
         let { userInfo, session } = reader;
+        console.log(JSON.stringify(session));
         // Passed
         socket["accountId"] = session.accountId;
         socket["token"] = session.token;

@@ -57,7 +57,14 @@ export class PracticeReposity {
         return deleteFromTable(this.pool, this.tableName, id);
     }
 
+    /**
+     * 
+     * @param {number} accountID 
+     * @param {number} lastTimeSync 
+     * @returns Return empty list if not found
+     */
     async findNotSync(accountID, lastTimeSync) {
+        console.log("Practice: Find not sync with lastTime : " + lastTimeSync.toString());
         let fields = [
             "mode",
             "accountID",
@@ -85,7 +92,8 @@ export class PracticeReposity {
 
     /** @param {[]} dataList */
     async insertOrUpdateList(accountID, dataList) {
-        if(dataList.length < 1) return [];
+        if (dataList.length < 1) return [];
+        console.log("Practice: Insert or update list");
         let fields = [
             "mode",
             "accountID",
@@ -137,7 +145,7 @@ export class PracticeReposity {
      * @param {number} accountId 
      * @returns {Promise<number>}
      */
-    async deleteByAccount(accountId){
+    async deleteByAccount(accountId) {
         let sql = `DELETE FROM ${this.tableName} WHERE accountId = ?`;
         var [result, f] = await this.pool.execute(sql, [accountId]);
         return result.affectedRows;

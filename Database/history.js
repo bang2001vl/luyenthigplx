@@ -65,7 +65,14 @@ export class HistoryReposity {
         return deleteFromTable(this.pool, this.tableName, id);
     }
 
+    /**
+     * 
+     * @param {number} accountID 
+     * @param {number} lastTimeSync 
+     * @returns 
+     */
     async findNotSync(accountID, lastTimeSync) {
+        console.log("History: Find not sync from lastTime = " + lastTimeSync.toString());
         let fields = [
             "mode",
             "accountID",
@@ -98,6 +105,7 @@ export class HistoryReposity {
     /** @param {[]} dataList */
     async insertList(accountID, dataList) {
         if(dataList.length < 1) return [];
+        console.log("Hisotry: Insert list");
         let fields = [
             "accountID",
             "mode",

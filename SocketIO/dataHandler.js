@@ -20,6 +20,7 @@ export class SocketDataEventHandler{
      * @param {*} data
      */
     async onNotifyNewData(socket, data){
+        console.log("SOKCET.IO: onNotifyDataChanged");
         // Check authorized
         var accountId = this.auth.getSocketAccount(socket);
         if (accountId === undefined) {
@@ -42,9 +43,7 @@ export class SocketDataEventHandler{
             return;
         }
 
-        console.log("SOCKET.IO: Insert histories");
         var a = await historyRepos.insertList(accountId, histories);
-        console.log("SOCKET.IO: Insert practices");
         var b = await practiceRepos.insertOrUpdateList(accountId, practices);
 
         socket.emit(SocketEvent.response_notify_changed, {
@@ -61,6 +60,8 @@ export class SocketDataEventHandler{
      * @param {*} data
      */
     async onRequestUnsyncData(socket, data){
+        console.log("SOKCET.IO: onRequestUnsync");
+        //console.log(JSON.stringify(data));
         // Check authorized
         var accountId = this.auth.getSocketAccount(socket);
         if (accountId === undefined) {
@@ -73,16 +74,13 @@ export class SocketDataEventHandler{
             onSocketWrongProtocol(socket);
             return;
         }
-        console.log(JSON.stringify(data));
         // Check arguments
         /** @type {number} */
         var lastSyncTime = data["lastSync"];
 
         var sync_time = getUTCTimestamp();
 
-        console.log("SOCKET.IO: Find histories");
         var unsync_history = await historyRepos.findNotSync(accountId, lastSyncTime);
-        console.log("SOCKET.IO: Find practices");
         var unsync_practices = await practiceRepos.findNotSync(accountId, lastSyncTime);
 
         var userInfo = (await userRepos.findByAccountId(accountId))[0];
