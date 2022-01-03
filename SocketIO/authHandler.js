@@ -6,6 +6,29 @@ import { authController, sessionRepos } from "../Database/mysqlController";
 import { SocketEvent } from "./event";
 import { onSocketUnauthorized, onSocketWrongProtocol } from "./utilities";
 
+const KEY_ACCOUNT_ID = "accountId";
+const KEY_TOKEN = "token";
+var sessionInfos = {};
+
+function getSessionInfo(socket) {
+    return sessionInfos[socket.id];
+}
+
+function saveSessionInfo(socket, accountId, token) {
+    console.log("Auth: Saved session data of socket id = " + socket.id);
+    let info = {};
+    info[KEY_TOKEN] = token;
+    info[KEY_ACCOUNT_ID] = accountId;
+
+    sessionInfos[socket.id] = info;
+    console.log(JSON.stringify(sessionInfos[socket.id]));
+}
+
+function deleteSessionInfo(socket) {
+    console.log("Auth: Delete session data of socket id = " + socket.id);
+    delete sessionInfos[socket.id];
+}
+
 export class SocketAuthEventHandler {
     /**
      * 
@@ -36,10 +59,10 @@ export class SocketAuthEventHandler {
 
         console.log("SocketIO: Check session OK");
         let { userInfo, session } = reader;
-        console.log(JSON.stringify(session));
+        //console.log(JSON.stringify(session));
         // Passed
-        socket["accountId"] = session.accountId;
-        socket["token"] = session.token;
+        saveSessionInfo(socket, session.accountId, session.token);
+
         await sessionRepos.updateDeviceInfo(session.token, device_info);
         await socket.join(session.accountId);
 
@@ -54,7 +77,7 @@ export class SocketAuthEventHandler {
      * @returns 
      */
     checkSocketAuthorized(socket) {
-        let accountId = socket["accountId"];
+        let accountId = this.getSocketAccount(socket);
         
         if (accountId === undefined || accountId === null) {
             return false;
@@ -65,9 +88,30 @@ export class SocketAuthEventHandler {
     /**
      * 
      * @param {Socket} socket 
+     * @returns {number} Account id, return undefined if not found
      */
     getSocketAccount(socket) {
-        return socket["accountId"];
+        let c = getSessionInfo(socket);
+        if(c === undefined) {
+            console.log("Auth-connection: Cannot found socket id = " + socket.id);
+            return undefined;
+        }
+        let accountId = c[KEY_ACCOUNT_ID];
+        if(accountId === undefined){
+            console.log("Auth: Cannot found accountId of socket id = " + socket.id);
+        }
+        return accountId;
+    }
+
+    /**
+     * 
+     * @param {Socket} socket 
+     * @returns {String} Token, return undefined if not found
+     */
+     getSocketToken(socket) {
+        let c = getSessionInfo(socket);
+        if(c === undefined) return undefined;
+        return c[KEY_TOKEN];
     }
 
     /**
@@ -75,13 +119,15 @@ export class SocketAuthEventHandler {
      * @param {Socket} socket 
      */
     async destroySession(socket) {
-        if(socket["token"] == undefined){
+        let token = this.getSocketToken(socket);
+        if(token == undefined){
             onSocketUnauthorized(socket);
             return;
         }
-        await sessionRepos.deleteSessionByToken(socket.token);
-        socket["accountId"] = null;
-        socket["token"] = null;
-        socket.disconnect("Token detroyed");
+        await sessionRepos.deleteSessionByToken(token);
+        deleteSessionInfo(socket);
+        console.log("Auth: Destroyed data of token : " + token);
     }
 }
+
+export const authEventHandler = new SocketAuthEventHandler();

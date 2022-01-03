@@ -148,6 +148,8 @@ export class PracticeReposity {
     async deleteByAccount(accountId) {
         let sql = `DELETE FROM ${this.tableName} WHERE accountId = ?`;
         var [result, f] = await this.pool.execute(sql, [accountId]);
+        
+        console.log(`SocketIO: Delete ${result.affectedRows} practices from accountId = ${accountId}`);
         return result.affectedRows;
     }
 }

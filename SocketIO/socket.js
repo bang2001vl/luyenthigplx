@@ -5,12 +5,14 @@ import { onSocketUnauthorized} from "./utilities";
 import { SocketAuthEventHandler } from "./authHandler";
 import { SocketDataEventHandler } from "./dataHandler";
 import { SocketEvent } from "./event";
+import { SocketUserEventHandler } from "./userHandler";
 
 const server = createServer();
 const io = new Server(server);
 
 const auth = new SocketAuthEventHandler();
 const dataEventHandler = new SocketDataEventHandler();
+const userEventHandler = new SocketUserEventHandler();
 
 io.on("connection", (socket) => {
     console.log("Attemp from " + socket.id);
@@ -36,6 +38,14 @@ io.on("connection", (socket) => {
 
     socket.on(SocketEvent.request_deleted_data, (data)=>{
         dataEventHandler.onDeleteData(socket, data, io);
+    });
+
+    socket.on(SocketEvent.update_userInfo, (data) =>{
+        userEventHandler.onUpdateUserInfo(socket, data);
+    });
+
+    socket.on(SocketEvent.request_get_userInfo, (data) =>{
+        userEventHandler.onRequestUserInfo(socket, data);
     });
 
     setTimeout(function () {
