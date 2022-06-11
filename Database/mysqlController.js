@@ -16,9 +16,9 @@ export class Reader{
 
 const pool = mysql.createPool({
     host: 'localhost',
-    user: 'doan1',
-    password: 'ktpm2019',
-    database: "new_schema",
+    user: 'sa',
+    password: 'HackDuocThi!@#NhatBanRoi$%^',
+    database: "doan1",
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0

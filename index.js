@@ -6,4 +6,4 @@ dotenv.config();
 
 initSocketIO(9000);
 
-    initServer();
+initServer();
