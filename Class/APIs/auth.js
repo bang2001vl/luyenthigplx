@@ -35,34 +35,6 @@ route.post("/login", async (req, res) => {
         token: token,
     }).end();
     return;
-    // console.log("Login with " + JSON.stringify({email, password}));
-    // const responseFromAuthServer = await axios.post(
-    //     `${appConfig.authServerURL}/auth/login`,
-    //     {
-    //         username: email,
-    //         password: password,
-    //         deviceInfo: "Native test app"
-    //     }
-    // );
-    // console.log("Result " + JSON.stringify(responseFromAuthServer.data, null, 2));
-    // if (!responseFromAuthServer.data.result) {
-    //     res.json({
-    //         errorCode: 402,
-    //         message: "Wrong email or password",
-    //     }).end();
-    //     return;
-    // }
-    // else {
-    //     const session = responseFromAuthServer.data.data.session;
-    //     const userInfo = await userRepos.findByAccountId(Number(session.accountId));
-    //     res.json({
-    //         userInfo: {
-    //             ...userInfo[0],
-    //             ...responseFromAuthServer.data.data.userInfo,
-    //         },
-    //         token: session.token,
-    //     }).end();
-    // }
 });
 
 // Test-only
@@ -75,34 +47,18 @@ route.post("/logout", async (req, res) => {
     }
 
     let token = req.body.token;
-    // let sessions = await sessionRepos.findSession(token);
-    // if (sessions === null || sessions.length < 1) {
-    //     res.json({
-    //         errorCode: 100,
-    //         message: "Invalid token",
-    //     }).end();
-    //     return;
-    // }
-
-    // await sessionRepos.deleteSessionByToken(token);
-    const responseFromAuthServer = await axios.post(
-        `${appConfig.authServerURL}/auth/session/destroy/self`,{},
-        { headers: { "token": token } }
-    );
-    if (!responseFromAuthServer.result) {
+    try{
+        await sessionRepos.deleteSessionByToken(token);
+        res.json({
+            result: "OK"
+        }).end();
+    }
+    catch(ex){
         res.json({
             errorCode: 100,
             message: "Invalid token",
         }).end();
-        return;
     }
-    else {
-        res.json({
-            result: "OK"
-        }).end();
-        return;
-    }
-
 });
 
 export const routeAuth = route;

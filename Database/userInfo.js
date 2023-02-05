@@ -32,41 +32,11 @@ export class UserInfoReposity {
      * @returns {Promise<UserModel[]>} Return empty list if not found
      */
     async findByAccountId(accountid) {
-        // let sql = `SELECT * FROM ${this.tableName} WHERE accountId = ?`;
-        // var [rows, f] = await this.pool.execute(sql, [accountid]);
-        // let rs = [];
-        // for (let i = 0; i < rows.length; i++) {
-        //     rs.push(rows[i]);
-        // }
-
-        // if (rs.length === 1) {
-        //     const response = await axios.get(
-        //         `${appConfig.authServerURL}/auth/nativeflutter/findbyid?accountId=${accountid}`
-        //     );
-        //     const userInfoFromAuthServer = {
-        //         ...response.data.data[0],
-        //         password: undefined,
-        //         username: undefined,
-        //     };
-        //     rs[0] = { ...rs[0], ...userInfoFromAuthServer };
-        // }
-
-        const response = await axios.get(
-            `${appConfig.authServerURL}/account/nativeflutter/findbyid?accountId=${accountid}`
-        );
-
-        const rs = [];
-        for (let i = 0; i < response.data.data.length; i++) {
-            const e = response.data.data[i];
-            const row = {
-                ...e,
-                password: undefined,
-                username: undefined,
-                name: e.fullname,
-                accountId: e.id,
-            }
-            
-            rs.push(row);
+        let sql = `SELECT * FROM ${this.tableName} WHERE accountId = ?`;
+        var [rows, f] = await this.pool.execute(sql, [accountid]);
+        let rs = [];
+        for (let i = 0; i < rows.length; i++) {
+            rs.push(rows[i]);
         }
 
         return rs;
@@ -74,18 +44,9 @@ export class UserInfoReposity {
 
     async updateLatestDelete(accountId, latestDelete) {
         let timeStamp = getUTCTimestamp();
-        // let sql = `UPDATE ${this.tableName} SET latestDelete = ?, updateTime = ? WHERE accountId = ?`;
-        // let [result, f] = await this.pool.execute(sql, [latestDelete, timeStamp, accountId]);
-        // return result.affectedRows;
-        const response = await axios.post(
-            `${appConfig.authServerURL}/account/nativeflutter/update`,
-            {
-                key: accountId,
-                latestDelete: latestDelete,
-                updateTime: timeStamp,
-            }
-        );
-        return response.data.result ? 1 : 0;
+        let sql = `UPDATE ${this.tableName} SET latestDelete = ?, updateTime = ? WHERE accountId = ?`;
+        let [result, f] = await this.pool.execute(sql, [latestDelete, timeStamp, accountId]);
+        return result.affectedRows;
     }
 
     /**

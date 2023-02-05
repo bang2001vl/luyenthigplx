@@ -13,28 +13,31 @@ export class AuthRepos {
      */
     async login(email, password) {
         // Find accont has auth
-        let l = await authRepos.findUserByAuth(email, password);
-        if (l.length === 1) {
-            let accountId = l[0].id;
-            console.log("APIs: Found auth " + JSON.stringify(l[0]));
+        let access_token = await authRepos.loginByAuth(email, password);
+        if (access_token != null) {
+            // Login success
+            // Get account data
+            let l = await sessionRepos.checkSession(access_token);
+            console.log("Login: Found auth", {authData: l});
             // Find userInfo
-            let l2 = await userRepos.findByAccountId(accountId);
+            let l2 = await userRepos.findByAccountId(l.account.id);
+            let userInfo = null;
             if (l2.length === 1) {
-                let userInfo = l2[0];
-                // if (userInfo.avatarURI) {
-                //     const aaa = await axios.get(`${appConfig.authServerURL}/public/${userInfo.avatarURI}`);
-                //     //console.log("Response: " + JSON.stringify(aaa));
-                //     //console.log("ResponseData: " + JSON.stringify(aaa.data));
-                //     userInfo.rawimage = aaa.data;
-                // }
-                // Insert token
-                var token = await sessionRepos.insertSession(userInfo.accountId);
-                console.log("APIs: Created session with token " + token);
-                return {
-                    userInfo: userInfo,
-                    token: token,
-                };
+                userInfo = l2[0];
             }
+            else {
+                // If userinfo not be created yet, then create new one
+                await userRepos.insert(new UserModel({
+                    ...l.userInfo,
+                    latestDelete: 0,
+                    updateTime: 0,
+                }));
+                userInfo = l.userInfo;
+            }
+            return {
+                userInfo: userInfo,
+                token: access_token,
+            };
         }
         return null;
     }
@@ -45,23 +48,11 @@ export class AuthRepos {
      * @returns Null if check failed
      */
     async checkToken(token) {
-        var l = await sessionRepos.findSession(token);
-        // console.log("Check token " + token);
-        // var resAuth = await axios.get(
-        //     `${appConfig.authServerURL}/auth/session/check`,
-        //     {headers: {"token": token}}
-        // );
-        // var l = [resAuth.data.data];
-        console.log("l = " + JSON.stringify(token));
-        console.log("Check token: Found token " + JSON.stringify(l));
-        if (l.length === 1) {
-            let session = l[0];
-            var userInfo = await userRepos.findByAccountId(Number(session.accountId));
-            console.log("Check token: Found userInfo " + JSON.stringify(userInfo));
-            if (userInfo.length < 1) {
-                return null;
-            }
-
+        var l = await sessionRepos.checkSession(token);
+        console.log("Check token: Found token ", {data: l});
+        if (l != null) {
+            var userInfo = await userRepos.findByAccountId(l.account.id);
+            const session = l.session;
             // Passed
             return {
                 userInfo: userInfo[0],

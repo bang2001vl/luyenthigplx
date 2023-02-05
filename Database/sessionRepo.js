@@ -1,7 +1,10 @@
 'use strict';
 
+import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
+import { AuthModel, UserModel } from "../Class/Model";
 import { SessionModel } from "../Class/Model/session";
+import { appConfig } from "../config";
 import { insertToDB, updateToDB } from "./utilities";
 
 /**
@@ -35,89 +38,50 @@ export class SessionReposity {
         return rs;
     }
 
-    /**
-     * Find session by token
-     * @param {String} token 
-     * @returns Return an empty list if not found
-     */
-     async findSessionByAccount(accountId) {
-        var sql = `SELECT * FROM ${this.tableName} WHERE accountId=?`;
-        var [rows, f] = await this.pool.execute(sql, [accountId]);
-        var rs = [];
-        for (var i = 0; i < rows.length; i++) {
-            rs.push(SessionModel.fromJSON(rows[i]));
-        }
-        return rs;
-    }
-
-    /**
-     * 
-     * @param {UserModel} user 
-     * @returns Token for session
-     */
-    async insertSession(accountId) {
-        console.log(`Session: Insert session`);
-        var token = await this.createToken();
-
-        var session = new SessionModel({
-            token: token,
-            accountId: accountId,
-        });
-
-        var fields = [
-            "token",
-            "accountId",
-        ];
-        await insertToDB(this.pool, this.tableName, session, fields);
-        return token;
-    }
-
-    /**
-     * Find session by token
-     * @param {String} token 
-     * @returns New token
-     */
-    async updateSession(oldToken) {
-        var token = await this.createToken();
-        console.log(`Session: Update ${oldToken} -> ${token}`);
-        var session = {
-            "token": token,
-        };
-
-        var [result, f] = await updateToDB(this.pool, this.tableName, oldToken, session, null);
-        //console.log(JSON.stringify(a));
-        return token;
-    }
-
-    /**
-     * 
-     * @returns New unique token
-     */
-    async createToken() {
-        var token = uuidv4();
-        var temp = await this.findSession(token);
-        while (temp.length > 0) {
-            // Loop to find unique id
-            console.log(`Session: Created token ${token}`);
-            token = uuidv4();
-            temp = await this.findSession(token);
-        }
-            console.log(`Session: Created token ${token}`);
-        return token;
-    }
-
     async deleteSessionByToken(token){
         console.log("Session: Delete by token " + token);
-        let sql = `DELETE FROM ${this.tableName} WHERE token = ?`;
-        var [result, f] = await this.pool.execute(sql, [token]);
-        //console.log(JSON.stringify(result.ad));
-        return result.affectedRows;
+        const response = await axios.delete(
+            `${appConfig.authServerURL}/session/delete/token?token=${token}`
+        );
+        return response.data.success ? 1 : 0;
     }
 
     async updateDeviceInfo(token, device_info){
         console.log("Session: Update session with device info " + device_info);
-        let sql = `UPDATE ${this.tableName} SET device_info=? WHERE token=?`;
-        let [result, f] = await this.pool.execute(sql, [device_info, token]);
-        return result.affectedRows;
+        return 1;
+    }
+
+    async checkSession(token){
+        const response = await axios.post(
+            `${appConfig.authServerURL}/session/check/token`,
+            {
+                token
+            }
+        );
+        const data = response.data;
+        if(!data.success){
+            return null;
+        }
+        console.log("checkSession: done", {responseData: data})
+        const account = new AuthModel({
+            id: data.account.id,
+            email: data.account.username,
+        });
+        const userInfo = new UserModel({
+            accountId: account.id,
+            name: data.userinfo.fullname,
+        });
+        const session = new SessionModel({
+            token: token,
+            accountId: account.id,
+            createTime: new Date(data.session.createdAt),
+            deviceInfo: "",
+            lastTime: new Date(data.session.last_access_time),
+        });
+        return {
+            account,
+            userInfo,
+            session,
+        };
     }
 }

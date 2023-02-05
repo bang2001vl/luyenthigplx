@@ -1,3 +1,3 @@
 export const appConfig = {
-    authServerURL: "http://localhost:5000",
+    authServerURL: "http://localhost:3000",
 }

@@ -12,7 +12,6 @@ console.log(`${appConfig.authServerURL}/public`);
 
 app.use(express.json());
 app.use('/auth', routeAuth);
-app.use('/authserver', expressHttpProxy(appConfig.authServerURL));
 
 /**
  * Start api server
